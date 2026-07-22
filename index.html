@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirim Pengumuman</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-500:#2f5fd9;
+    --green-400:#188053;
+    --amber-400:#a86214;
+    --red-400:#c0392b;
+    --text-hi:#141a2b;
+    --text-mid:#667085;
+    --panel-border:#e2e6ef;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{
+    min-height:100%;
+    background:#eef1f7;
+    font-family:'Inter', sans-serif;
+    color:var(--text-hi);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:24px 16px;
+  }
+  .card{
+    width:100%;
+    max-width:460px;
+    background:#fff;
+    border:1px solid var(--panel-border);
+    border-radius:18px;
+    padding:24px 22px 28px;
+    box-shadow:0 8px 24px rgba(20,26,43,.08);
+  }
+  h1{
+    font-size:19px;
+    font-weight:800;
+    margin-bottom:4px;
+  }
+  p.sub{
+    font-size:12.5px;
+    color:var(--text-mid);
+    margin-bottom:18px;
+  }
+
+  /* Tab switch */
+  .tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .tab-btn{
+    padding:11px;
+    border-radius:12px;
+    border:1.5px solid var(--panel-border);
+    background:#f7f8fb;
+    font-weight:800;
+    font-size:13px;
+    color:var(--text-mid);
+    cursor:pointer;
+    text-align:center;
+  }
+  .tab-btn.active{
+    background:var(--blue-500);
+    border-color:var(--blue-500);
+    color:#fff;
+  }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    color:var(--text-mid);
+    margin-bottom:6px;
+    margin-top:16px;
+  }
+  label:first-of-type{ margin-top:0; }
+
+  textarea, input[type=text], input[type=number]{
+    width:100%;
+    border:1.5px solid var(--panel-border);
+    border-radius:12px;
+    padding:12px 14px;
+    font-family:inherit;
+    font-size:14.5px;
+    color:var(--text-hi);
+    outline:none;
+    transition:border-color .15s;
+  }
+  textarea{ resize:vertical; min-height:90px; }
+  textarea:focus, input:focus{ border-color:var(--blue-500); }
+
+  .type-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+  }
+  .type-opt{
+    border:1.5px solid var(--panel-border);
+    border-radius:12px;
+    padding:10px 4px;
+    text-align:center;
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    user-select:none;
+    color:var(--text-mid);
+  }
+  .type-opt.active[data-type="briefing"]{ background:#eaf1ff; border-color:var(--blue-500); color:var(--blue-500); }
+  .type-opt.active[data-type="info"]{ background:#fdf3e7; border-color:var(--amber-400); color:var(--amber-400); }
+  .type-opt.active[data-type="urgent"]{ background:#fbeceb; border-color:var(--red-400); color:var(--red-400); }
+
+  .file-drop{
+    border:1.5px dashed var(--panel-border);
+    border-radius:12px;
+    padding:16px;
+    text-align:center;
+    cursor:pointer;
+    font-size:13px;
+    color:var(--text-mid);
+    position:relative;
+    overflow:hidden;
+  }
+  .file-drop input{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    cursor:pointer;
+  }
+  .file-drop img{
+    max-width:100%;
+    max-height:140px;
+    border-radius:8px;
+    display:block;
+    margin:0 auto 8px;
+  }
+
+  button.send{
+    width:100%;
+    margin-top:22px;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:var(--blue-500);
+    color:#fff;
+    font-size:15px;
+    font-weight:800;
+    cursor:pointer;
+  }
+  .panel[data-mode="sales"] button.send{
+    background:linear-gradient(90deg,#a9781f,#e8b647);
+    color:#221703;
+  }
+  button.send:active{ transform:scale(.98); }
+  button.send:disabled{ opacity:.6; cursor:default; }
+
+  .status{
+    margin-top:14px;
+    font-size:13px;
+    font-weight:700;
+    text-align:center;
+    min-height:18px;
+  }
+  .status.ok{ color:var(--green-400); }
+  .status.err{ color:var(--red-400); }
+
+  .hint{
+    margin-top:18px;
+    font-size:11px;
+    color:var(--text-mid);
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>📢 Kirim Pengumuman</h1>
+  <p class="sub">Pengumuman akan tampil di dashboard selama 30 detik.</p>
+
+  <div class="tabs">
+    <div class="tab-btn active" data-tab="text">📢 Pengumuman Biasa</div>
+    <div class="tab-btn" data-tab="sales">🏆 Sales Hebat</div>
+  </div>
+
+  <!-- PANEL: Pengumuman Biasa -->
+  <div class="panel active" id="panelText">
+    <label>Jenis Pengumuman</label>
+    <div class="type-grid" id="typeGrid">
+      <div class="type-opt active" data-type="briefing">📋 Briefing</div>
+      <div class="type-opt" data-type="info">📢 Info</div>
+      <div class="type-opt" data-type="urgent">🚨 Penting</div>
+    </div>
+
+    <label for="pesan">Isi Pengumuman</label>
+    <textarea id="pesan" placeholder="Contoh: Briefing sore ini jam 17.00 di ruang meeting" maxlength="200"></textarea>
+
+    <button class="send" id="btnSendText">Kirim ke Dashboard</button>
+    <div class="status" id="statusText"></div>
+  </div>
+
+  <!-- PANEL: Sales Hebat -->
+  <div class="panel" data-mode="sales" id="panelSales">
+    <label>Foto</label>
+    <div class="file-drop" id="fileDrop">
+      <img id="fotoPreview" style="display:none;">
+      <span id="fileDropText">Ketuk untuk pilih foto</span>
+      <input type="file" id="fotoInput" accept="image/*">
+    </div>
+
+    <label for="scNama">Nama</label>
+    <input type="text" id="scNama" placeholder="Contoh: Sabrina" maxlength="60">
+
+    <label for="scPencapaian">Pencapaian (Rp)</label>
+    <input type="number" id="scPencapaian" placeholder="Contoh: 50000000">
+
+    <label for="scProduk">Produk Terjual (unit)</label>
+    <input type="number" id="scProduk" placeholder="Contoh: 22">
+
+    <label for="scJudul">Judul Kartu (opsional)</label>
+    <input type="text" id="scJudul" placeholder="Default: SALES HEBAT" maxlength="30">
+
+    <button class="send" id="btnSendSales">Kirim ke Dashboard</button>
+    <div class="status" id="statusSales"></div>
+  </div>
+
+  <div class="hint">
+    Pesan akan muncul di layar dashboard dalam ±8 detik setelah dikirim.
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   KONFIGURASI — isi dengan URL Google Form & key imgbb kamu.
+   Lihat SETUP-BREAKING-NEWS.md untuk cara mendapatkannya.
+   ===================================================================== */
+const FORM_CONFIG = {
+  // URL "formResponse" dari Google Form kamu.
+  actionUrl: "https://docs.google.com/forms/d/e/GANTI_DENGAN_FORM_ID/formResponse",
+
+  // entry ID tiap pertanyaan di Google Form.
+  entryPesan:      "entry.GANTI_ID_PESAN",
+  entryTipe:       "entry.GANTI_ID_TIPE",
+  entryNama:       "entry.GANTI_ID_NAMA",
+  entryPencapaian: "entry.GANTI_ID_PENCAPAIAN",
+  entryProduk:     "entry.GANTI_ID_PRODUK",
+  entryJudul:      "entry.GANTI_ID_JUDUL",
+  entryFoto:       "entry.GANTI_ID_FOTO"
+};
+
+// Daftar gratis di https://api.imgbb.com/ untuk dapat API key ini.
+const IMGBB_API_KEY = "GANTI_DENGAN_IMGBB_API_KEY";
+
+/* ---------------- Tab switch ---------------- */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const tab = btn.dataset.tab;
+    document.getElementById("panelText").classList.toggle("active", tab === "text");
+    document.getElementById("panelSales").classList.toggle("active", tab === "sales");
+  });
+});
+
+/* ---------------- Panel: Pengumuman Biasa ---------------- */
+let selectedType = "briefing";
+
+document.querySelectorAll("#typeGrid .type-opt").forEach(opt => {
+  opt.addEventListener("click", () => {
+    document.querySelectorAll("#typeGrid .type-opt").forEach(o => o.classList.remove("active"));
+    opt.classList.add("active");
+    selectedType = opt.dataset.type;
+  });
+});
+
+const btnSendText  = document.getElementById("btnSendText");
+const pesanEl       = document.getElementById("pesan");
+const statusTextEl  = document.getElementById("statusText");
+
+btnSendText.addEventListener("click", async () => {
+  const pesan = pesanEl.value.trim();
+
+  if(!pesan){
+    setStatus(statusTextEl, "Isi pengumuman dulu ya.", "err");
+    return;
+  }
+
+  btnSendText.disabled = true;
+  setStatus(statusTextEl, "Mengirim...", "");
+
+  const body = new FormData();
+  body.append(FORM_CONFIG.entryPesan, pesan);
+  body.append(FORM_CONFIG.entryTipe, selectedType);
+
+  try{
+    await submitToForm(body);
+    setStatus(statusTextEl, "✅ Terkirim! Akan tampil di dashboard sebentar lagi.", "ok");
+    pesanEl.value = "";
+  } catch(err){
+    console.error(err);
+    setStatus(statusTextEl, "Gagal mengirim. Cek koneksi internet.", "err");
+  } finally {
+    btnSendText.disabled = false;
+  }
+});
+
+/* ---------------- Panel: Sales Hebat ---------------- */
+const fotoInput    = document.getElementById("fotoInput");
+const fotoPreview  = document.getElementById("fotoPreview");
+const fileDropText = document.getElementById("fileDropText");
+
+fotoInput.addEventListener("change", () => {
+  const file = fotoInput.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    fotoPreview.src = e.target.result;
+    fotoPreview.style.display = "block";
+    fileDropText.textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+});
+
+const btnSendSales   = document.getElementById("btnSendSales");
+const statusSalesEl  = document.getElementById("statusSales");
+
+btnSendSales.addEventListener("click", async () => {
+  const nama       = document.getElementById("scNama").value.trim();
+  const pencapaian = document.getElementById("scPencapaian").value.trim();
+  const produk     = document.getElementById("scProduk").value.trim();
+  const judul      = document.getElementById("scJudul").value.trim();
+  const file       = fotoInput.files[0];
+
+  if(!nama){
+    setStatus(statusSalesEl, "Isi nama dulu ya.", "err");
+    return;
+  }
+  if(!file){
+    setStatus(statusSalesEl, "Pilih foto dulu ya.", "err");
+    return;
+  }
+
+  btnSendSales.disabled = true;
+
+  try{
+    setStatus(statusSalesEl, "Mengunggah foto...", "");
+    const fotoUrl = await uploadFoto(file);
+
+    setStatus(statusSalesEl, "Mengirim ke dashboard...", "");
+    const body = new FormData();
+    body.append(FORM_CONFIG.entryTipe, "sales");
+    body.append(FORM_CONFIG.entryNama, nama);
+    body.append(FORM_CONFIG.entryPencapaian, pencapaian);
+    body.append(FORM_CONFIG.entryProduk, produk);
+    body.append(FORM_CONFIG.entryJudul, judul);
+    body.append(FORM_CONFIG.entryFoto, fotoUrl);
+
+    await submitToForm(body);
+
+    setStatus(statusSalesEl, "✅ Terkirim! Kartu akan tampil di dashboard sebentar lagi.", "ok");
+    document.getElementById("scNama").value = "";
+    document.getElementById("scPencapaian").value = "";
+    document.getElementById("scProduk").value = "";
+    document.getElementById("scJudul").value = "";
+    fotoInput.value = "";
+    fotoPreview.style.display = "none";
+    fileDropText.textContent = "Ketuk untuk pilih foto";
+  } catch(err){
+    console.error(err);
+    setStatus(statusSalesEl, "Gagal mengirim. Cek koneksi internet.", "err");
+  } finally {
+    btnSendSales.disabled = false;
+  }
+});
+
+/* ---------------- Helper ---------------- */
+function setStatus(el, text, cls){
+  el.textContent = text;
+  el.className = "status" + (cls ? " " + cls : "");
+}
+
+async function submitToForm(formData){
+  /*
+   * mode "no-cors" wajib untuk submit ke Google Form dari luar
+   * domain Google. Responsnya opaque (tidak bisa dibaca), jadi
+   * kita anggap sukses selama tidak ada error jaringan.
+   */
+  await fetch(FORM_CONFIG.actionUrl, {
+    method: "POST",
+    mode: "no-cors",
+    body: formData
+  });
+}
+
+async function uploadFoto(file){
+  const body = new FormData();
+  body.append("image", file);
+
+  const res = await fetch(
+    "https://api.imgbb.com/1/upload?key=" + IMGBB_API_KEY,
+    { method: "POST", body }
+  );
+
+  const data = await res.json();
+
+  if(!data || !data.data || !data.data.url){
+    throw new Error("Upload foto gagal");
+  }
+
+  return data.data.url;
+}
+</script>
+
+</body>
+</html>
