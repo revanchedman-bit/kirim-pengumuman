@@ -1,3 +1,29 @@
+None selected 
+
+Skip to content
+Using Gmail with screen readers
+in:sent 
+Enable desktop notifications for Gmail.
+   OK  No thanks
+1 of 5
+DASBOARD
+
+Simple Man
+5:17 PM (54 minutes ago)
+ 
+2
+
+Simple Man
+6:04 PM (8 minutes ago)
+entryPesan: "entry.17263440", entryTipe: "entry.1267418841", entryNama: "entry.1484666681", entryPencapaian: "entry.1159040072", entryProduk: "entry.357565826",
+
+Simple Man <revanchedman@gmail.com>
+Attachments
+6:11 PM (0 minutes ago)
+to leterpace
+
+ One attachment
+  •  Scanned by Gmail
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -247,7 +273,7 @@ const FORM_CONFIG = {
   // URL "formResponse" dari Google Form kamu.
   actionUrl: "https://docs.google.com/forms/d/e/1FAIpQLSc8EYOso-OyZtISPX6JocuzGQHk28LsGjLeMaUo2yKqGPbmLQ/formResponse",
 
-  // entry ID tiap pertanyaan di Google Form.
+ // entry ID tiap pertanyaan di Google Form.
   entryPesan:      "entry.17263440",
   entryTipe:       "entry.1267418841",
   entryNama:       "entry.1484666681",
@@ -259,7 +285,7 @@ const FORM_CONFIG = {
 
 // URL Web App Google Apps Script untuk upload foto ke Google Drive.
 // Lihat SETUP-BREAKING-NEWS.md bagian "Setup Google Drive + Apps Script".
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybaurxCd9d69s3OrBt_wEgb7d1B8IWMr3VR37-uusklBGLZ-ymACSsNgiG2fFJoNw/exe";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEUV5upn7SCKrO7s-n8u20X1LP5nNm0wfUb99i0fc/exec";
 
 /* ---------------- Tab switch ---------------- */
 document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -309,7 +335,7 @@ btnSendText.addEventListener("click", async () => {
     pesanEl.value = "";
   } catch(err){
     console.error(err);
-    setStatus(statusTextEl, "Gagal mengirim. Cek koneksi internet.", "err");
+    setStatus(statusTextEl, "Gagal mengirim: " + (err.message || err), "err");
   } finally {
     btnSendText.disabled = false;
   }
@@ -379,7 +405,7 @@ btnSendSales.addEventListener("click", async () => {
     fileDropText.textContent = "Ketuk untuk pilih foto";
   } catch(err){
     console.error(err);
-    setStatus(statusSalesEl, "Gagal mengirim. Cek koneksi internet.", "err");
+    setStatus(statusSalesEl, "Gagal mengirim: " + (err.message || err), "err");
   } finally {
     btnSendSales.disabled = false;
   }
@@ -424,7 +450,17 @@ async function uploadFoto(file){
     })
   });
 
-  const data = await res.json();
+  const raw = await res.text();
+  let data;
+
+  try{
+    data = JSON.parse(raw);
+  } catch(parseErr){
+    throw new Error(
+      "Respons Apps Script bukan JSON (kemungkinan APPS_SCRIPT_URL salah/belum di-deploy ulang). Isi respons: " +
+      raw.slice(0, 150)
+    );
+  }
 
   if(!data || !data.success || !data.url){
     throw new Error(data && data.error ? data.error : "Upload foto ke Google Drive gagal");
@@ -448,3 +484,5 @@ function fileToBase64(file){
 
 </body>
 </html>
+index-2.html
+Displaying index-2.html.
