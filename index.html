@@ -119,29 +119,27 @@
   .type-opt.active[data-type="info"]{ background:#fdf3e7; border-color:var(--amber-400); color:var(--amber-400); }
   .type-opt.active[data-type="urgent"]{ background:#fbeceb; border-color:var(--red-400); color:var(--red-400); }
 
-  .file-drop{
-    border:1.5px dashed var(--panel-border);
-    border-radius:12px;
-    padding:16px;
-    text-align:center;
-    cursor:pointer;
-    font-size:13px;
+  .drive-help{
+    margin-top:8px;
+    font-size:11px;
+    line-height:1.5;
     color:var(--text-mid);
-    position:relative;
-    overflow:hidden;
   }
-  .file-drop input{
-    position:absolute;
-    inset:0;
-    opacity:0;
-    cursor:pointer;
+
+  .drive-preview{
+    margin-top:12px;
+    padding:8px;
+    border:1px solid var(--panel-border);
+    border-radius:12px;
+    background:#f7f8fb;
   }
-  .file-drop img{
-    max-width:100%;
-    max-height:140px;
+
+  .drive-preview img{
+    width:100%;
+    max-height:220px;
+    object-fit:contain;
     border-radius:8px;
     display:block;
-    margin:0 auto 8px;
   }
 
   button.send{
@@ -210,21 +208,18 @@
 
   <!-- PANEL: Sales Hebat -->
   <div class="panel" data-mode="sales" id="panelSales">
-    <label>Foto</label>
     <label for="scFotoUrl">Link Foto Google Drive</label>
-<input
-  type="text"
-  id="scFotoUrl"
-  placeholder="Tempel link foto Google Drive di sini"
->
-
-<div id="fotoPreviewBox" style="display:none; margin-top:10px;">
-  <img
-    id="fotoPreview"
-    alt="Preview foto"
-    style="width:100%; max-height:180px; object-fit:contain; border-radius:10px;"
-  >
-</div>
+    <input
+      type="text"
+      id="scFotoUrl"
+      placeholder="Tempel link file foto Google Drive"
+      autocomplete="off"
+    >
+    <div class="drive-help">
+      Pastikan akses file: <strong>Siapa saja yang memiliki link → Pelihat</strong>.
+    </div>
+    <div class="drive-preview" id="fotoPreviewBox" style="display:none;">
+      <img id="fotoPreview" alt="Preview foto Sales Hebat">
     </div>
 
     <label for="scNama">Nama</label>
@@ -250,8 +245,8 @@
 
 <script>
 /* =====================================================================
-   KONFIGURASI — isi dengan URL Google Form & URL Apps Script kamu.
-   Lihat SETUP-BREAKING-NEWS.md untuk cara mendapatkannya.
+   KONFIGURASI GOOGLE FORM
+   Foto Sales Hebat menggunakan link file Google Drive yang sudah publik.
    ===================================================================== */
 const FORM_CONFIG = {
   // URL "formResponse" dari Google Form kamu.
@@ -266,10 +261,6 @@ const FORM_CONFIG = {
   entryJudul:      "entry.1748093992",
   entryFoto:       "entry.1559904346"
 };
-
-// URL Web App Google Apps Script untuk upload foto ke Google Drive.
-// Lihat SETUP-BREAKING-NEWS.md bagian "Setup Google Drive + Apps Script".
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxEUV5upn7SCKrO7s-n8u20X1LP5nNm0wfUb99i0fc/exec";
 
 /* ---------------- Tab switch ---------------- */
 document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -326,49 +317,81 @@ btnSendText.addEventListener("click", async () => {
 });
 
 /* ---------------- Panel: Sales Hebat ---------------- */
-const fotoInput    = document.getElementById("fotoInput");
-const fotoPreview  = document.getElementById("fotoPreview");
-const fileDropText = document.getElementById("fileDropText");
-
-fotoInput.addEventListener("change", () => {
-  const file = fotoInput.files[0];
-  if(!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    fotoPreview.src = e.target.result;
-    fotoPreview.style.display = "block";
-    fileDropText.textContent = file.name;
-  };
-  reader.readAsDataURL(file);
-});
-
+const fotoUrlInput   = document.getElementById("scFotoUrl");
+const fotoPreview    = document.getElementById("fotoPreview");
+const fotoPreviewBox = document.getElementById("fotoPreviewBox");
 const btnSendSales   = document.getElementById("btnSendSales");
 const statusSalesEl  = document.getElementById("statusSales");
+
+let previewTimer;
+fotoUrlInput.addEventListener("input", () => {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(showDrivePreview, 350);
+});
+
+fotoPreview.addEventListener("load", () => {
+  fotoPreviewBox.style.display = "block";
+  if(statusSalesEl.textContent.includes("Foto tidak dapat")){
+    setStatus(statusSalesEl, "", "");
+  }
+});
+
+fotoPreview.addEventListener("error", () => {
+  fotoPreviewBox.style.display = "none";
+  if(fotoUrlInput.value.trim()){
+    setStatus(
+      statusSalesEl,
+      "Foto tidak dapat dibuka. Pastikan link adalah file gambar dan akses Drive sudah publik.",
+      "err"
+    );
+  }
+});
+
+function showDrivePreview(){
+  const fotoUrl = convertGoogleDriveUrl(fotoUrlInput.value.trim());
+
+  if(!fotoUrl){
+    fotoPreview.removeAttribute("src");
+    fotoPreviewBox.style.display = "none";
+    return;
+  }
+
+  fotoPreviewBox.style.display = "none";
+  fotoPreview.src = fotoUrl;
+}
 
 btnSendSales.addEventListener("click", async () => {
   const nama       = document.getElementById("scNama").value.trim();
   const pencapaian = document.getElementById("scPencapaian").value.trim();
   const produk     = document.getElementById("scProduk").value.trim();
   const judul      = document.getElementById("scJudul").value.trim();
-  const file       = fotoInput.files[0];
+  const linkDrive  = fotoUrlInput.value.trim();
 
   if(!nama){
     setStatus(statusSalesEl, "Isi nama dulu ya.", "err");
     return;
   }
-  if(!file){
-    setStatus(statusSalesEl, "Pilih foto dulu ya.", "err");
+
+  if(!linkDrive){
+    setStatus(statusSalesEl, "Tempel link foto Google Drive dulu ya.", "err");
+    return;
+  }
+
+  const fotoUrl = convertGoogleDriveUrl(linkDrive);
+  if(!fotoUrl){
+    setStatus(
+      statusSalesEl,
+      "Link tidak valid. Gunakan link file foto Google Drive, bukan link folder.",
+      "err"
+    );
     return;
   }
 
   btnSendSales.disabled = true;
 
   try{
-    setStatus(statusSalesEl, "Mengunggah foto...", "");
-    const fotoUrl = await uploadFoto(file);
-
     setStatus(statusSalesEl, "Mengirim ke dashboard...", "");
+
     const body = new FormData();
     body.append(FORM_CONFIG.entryTipe, "sales");
     body.append(FORM_CONFIG.entryNama, nama);
@@ -384,9 +407,9 @@ btnSendSales.addEventListener("click", async () => {
     document.getElementById("scPencapaian").value = "";
     document.getElementById("scProduk").value = "";
     document.getElementById("scJudul").value = "";
-    fotoInput.value = "";
-    fotoPreview.style.display = "none";
-    fileDropText.textContent = "Ketuk untuk pilih foto";
+    fotoUrlInput.value = "";
+    fotoPreview.removeAttribute("src");
+    fotoPreviewBox.style.display = "none";
   } catch(err){
     console.error(err);
     setStatus(statusSalesEl, "Gagal mengirim: " + (err.message || err), "err");
@@ -414,55 +437,36 @@ async function submitToForm(formData){
   });
 }
 
-async function uploadFoto(file){
-  const base64 = await fileToBase64(file);
-  const filename = Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+function convertGoogleDriveUrl(url){
+  if(!url) return null;
 
-  /*
-   * Content-Type "text/plain" sengaja dipakai (bukan application/json)
-   * supaya browser tidak mengirim preflight OPTIONS request — Apps
-   * Script tidak menjawab preflight dengan baik. Isinya tetap JSON,
-   * cukup dibaca manual di sisi Apps Script lewat e.postData.contents.
-   */
-  const res = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({
-      base64: base64,
-      mimeType: file.type || "image/jpeg",
-      filename: filename
-    })
-  });
-
-  const raw = await res.text();
-  let data;
-
-  try{
-    data = JSON.parse(raw);
-  } catch(parseErr){
-    throw new Error(
-      "Respons Apps Script bukan JSON (kemungkinan APPS_SCRIPT_URL salah/belum di-deploy ulang). Isi respons: " +
-      raw.slice(0, 150)
-    );
+  // Jika URL sudah berupa URL thumbnail hasil konversi, gunakan langsung.
+  if(/^https:\/\/drive\.google\.com\/thumbnail\?/i.test(url)){
+    return url;
   }
 
-  if(!data || !data.success || !data.url){
-    throw new Error(data && data.error ? data.error : "Upload foto ke Google Drive gagal");
+  let fileId = null;
+
+  // Format umum: https://drive.google.com/file/d/FILE_ID/view
+  const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if(fileMatch){
+    fileId = fileMatch[1];
   }
 
-  return data.url;
-}
+  // Format lain: open?id=FILE_ID atau uc?id=FILE_ID
+  if(!fileId){
+    try{
+      const parsedUrl = new URL(url);
+      if(parsedUrl.hostname !== "drive.google.com") return null;
+      fileId = parsedUrl.searchParams.get("id");
+    } catch(error){
+      return null;
+    }
+  }
 
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // reader.result berbentuk "data:image/jpeg;base64,AAAA..."
-      resolve(reader.result.split(",")[1]);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+  if(!fileId) return null;
+
+  return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
 }
 </script>
 
