@@ -240,7 +240,7 @@
 
 <script>
 /* =====================================================================
-   KONFIGURASI — isi dengan URL Google Form & key imgbb kamu.
+   KONFIGURASI — isi dengan URL Google Form & URL Apps Script kamu.
    Lihat SETUP-BREAKING-NEWS.md untuk cara mendapatkannya.
    ===================================================================== */
 const FORM_CONFIG = {
@@ -257,8 +257,9 @@ const FORM_CONFIG = {
   entryFoto:       "entry.1559904346"
 };
 
-// Daftar gratis di https://api.imgbb.com/ untuk dapat API key ini.
-const IMGBB_API_KEY = "9cdc481a480269dffd30bc57127c6da8";
+// URL Web App Google Apps Script untuk upload foto ke Google Drive.
+// Lihat SETUP-BREAKING-NEWS.md bagian "Setup Google Drive + Apps Script".
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybaurxCd9d69s3OrBt_wEgb7d1B8IWMr3VR37-uusklBGLZ-ymACSsNgiG2fFJoNw/exec";
 
 /* ---------------- Tab switch ---------------- */
 document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -404,21 +405,44 @@ async function submitToForm(formData){
 }
 
 async function uploadFoto(file){
-  const body = new FormData();
-  body.append("image", file);
+  const base64 = await fileToBase64(file);
+  const filename = Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
-  const res = await fetch(
-    "https://api.imgbb.com/1/upload?key=" + IMGBB_API_KEY,
-    { method: "POST", body }
-  );
+  /*
+   * Content-Type "text/plain" sengaja dipakai (bukan application/json)
+   * supaya browser tidak mengirim preflight OPTIONS request — Apps
+   * Script tidak menjawab preflight dengan baik. Isinya tetap JSON,
+   * cukup dibaca manual di sisi Apps Script lewat e.postData.contents.
+   */
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      base64: base64,
+      mimeType: file.type || "image/jpeg",
+      filename: filename
+    })
+  });
 
   const data = await res.json();
 
-  if(!data || !data.data || !data.data.url){
-    throw new Error("Upload foto gagal");
+  if(!data || !data.success || !data.url){
+    throw new Error(data && data.error ? data.error : "Upload foto ke Google Drive gagal");
   }
 
-  return data.data.url;
+  return data.url;
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // reader.result berbentuk "data:image/jpeg;base64,AAAA..."
+      resolve(reader.result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 </script>
 
