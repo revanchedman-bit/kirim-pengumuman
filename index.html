@@ -211,10 +211,20 @@
   <!-- PANEL: Sales Hebat -->
   <div class="panel" data-mode="sales" id="panelSales">
     <label>Foto</label>
-    <div class="file-drop" id="fileDrop">
-      <img id="fotoPreview" style="display:none;">
-      <span id="fileDropText">Ketuk untuk pilih foto</span>
-      <input type="file" id="fotoInput" accept="image/*">
+    <label for="scFotoUrl">Link Foto Google Drive</label>
+<input
+  type="text"
+  id="scFotoUrl"
+  placeholder="Tempel link foto Google Drive di sini"
+>
+
+<div id="fotoPreviewBox" style="display:none; margin-top:10px;">
+  <img
+    id="fotoPreview"
+    alt="Preview foto"
+    style="width:100%; max-height:180px; object-fit:contain; border-radius:10px;"
+  >
+</div>
     </div>
 
     <label for="scNama">Nama</label>
