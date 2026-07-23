@@ -85,7 +85,7 @@
   }
   label:first-of-type{ margin-top:0; }
 
-  textarea, input[type=text], input[type=number]{
+  textarea, input[type=text], input[type=number], select{
     width:100%;
     border:1.5px solid var(--panel-border);
     border-radius:12px;
@@ -95,9 +95,12 @@
     color:var(--text-hi);
     outline:none;
     transition:border-color .15s;
+    background:#fff;
   }
   textarea{ resize:vertical; min-height:90px; }
-  textarea:focus, input:focus{ border-color:var(--blue-500); }
+  textarea:focus, input:focus, select:focus{ border-color:var(--blue-500); }
+  select{ cursor:pointer; }
+  input[readonly]{ background:#f7f8fb; color:var(--text-mid); }
 
   .type-grid{
     display:grid;
@@ -208,22 +211,16 @@
 
   <!-- PANEL: Sales Hebat -->
   <div class="panel" data-mode="sales" id="panelSales">
-    <label for="scFotoUrl">Link Foto Google Drive</label>
-    <input
-      type="text"
-      id="scFotoUrl"
-      placeholder="Tempel link file foto Google Drive"
-      autocomplete="off"
-    >
+    <label for="scNama">Pilih Sales</label>
+    <select id="scNama">
+      <option value="" disabled selected>-- Pilih nama --</option>
+    </select>
     <div class="drive-help">
-      Pastikan akses file: <strong>Siapa saja yang memiliki link → Pelihat</strong>.
+      Foto otomatis diambil dari Google Drive sesuai nama yang dipilih.
     </div>
     <div class="drive-preview" id="fotoPreviewBox" style="display:none;">
       <img id="fotoPreview" alt="Preview foto Sales Hebat">
     </div>
-
-    <label for="scNama">Nama</label>
-    <input type="text" id="scNama" placeholder="Contoh: Sabrina" maxlength="60">
 
     <label for="scPencapaian">Pencapaian (Rp)</label>
     <input type="number" id="scPencapaian" placeholder="Contoh: 50000000">
@@ -260,6 +257,25 @@ const FORM_CONFIG = {
   entryProduk:     "entry.357565826",
   entryJudul:      "entry.1748093992",
   entryFoto:       "entry.1559904346"
+};
+
+/* =====================================================================
+   DAFTAR FOTO SALES (Google Drive)
+   Tambah/ubah nama & link di sini kalau ada sales baru atau foto diganti.
+   ===================================================================== */
+const SALES_PHOTOS = {
+  "Amel":    "https://drive.google.com/file/d/1rkPPESpvu-HnIMG-WhDLfVlMN3k60CT8/view",
+  "Amin":    "https://drive.google.com/file/d/1j5fD1T3VBtg_07fCQTC-YCrtVV8phCaA/view",
+  "Divan":   "https://drive.google.com/file/d/1eGTD-R7lsppL7xyxsjyRWTYh8hqcFJFg/view",
+  "Erni":    "https://drive.google.com/file/d/1aj9eP-QF0wHmgePcB5tCfC4aIaGphIDE/view",
+  "Fadli":   "https://drive.google.com/file/d/1N1eqW5wKkgnpAEUxUrS9UwgyuVjBaCWC/view",
+  "Hana":    "https://drive.google.com/file/d/1EGn_i-lr_sHGYbF4TcjVGtQ3_kYgpIrz/view",
+  "Ilham":   "https://drive.google.com/file/d/1ISbvLpq1VI3Wqxl4GOyg3rJqIyBJ02_F/view",
+  "Indri":   "https://drive.google.com/file/d/1YeM9Uf93k_qwfaTWqPU7iuac4ucsBd9a/view",
+  "Irfan":   "https://drive.google.com/file/d/1G1-SIQYzUwGkgwu4Dkmo_kBrO6ZqZefe/view",
+  "Jeannet": "https://drive.google.com/file/d/1SkISxkkOonYljllhaTFWbNglxwwV8lso/view",
+  "Kiki":    "https://drive.google.com/file/d/1AnvEOzTJa5YagFVEdxRpGEVkqXbIs6RS/view",
+  "Melin":   "https://drive.google.com/file/d/1QLcn52dojKApzvyIHvrsSklj4mV58s-5/view"
 };
 
 /* ---------------- Tab switch ---------------- */
@@ -317,17 +333,21 @@ btnSendText.addEventListener("click", async () => {
 });
 
 /* ---------------- Panel: Sales Hebat ---------------- */
-const fotoUrlInput   = document.getElementById("scFotoUrl");
+const namaSelect     = document.getElementById("scNama");
 const fotoPreview    = document.getElementById("fotoPreview");
 const fotoPreviewBox = document.getElementById("fotoPreviewBox");
 const btnSendSales   = document.getElementById("btnSendSales");
 const statusSalesEl  = document.getElementById("statusSales");
 
-let previewTimer;
-fotoUrlInput.addEventListener("input", () => {
-  clearTimeout(previewTimer);
-  previewTimer = setTimeout(showDrivePreview, 350);
+// Isi dropdown dari daftar SALES_PHOTOS (urut sesuai abjad nama).
+Object.keys(SALES_PHOTOS).sort((a, b) => a.localeCompare(b)).forEach(nama => {
+  const opt = document.createElement("option");
+  opt.value = nama;
+  opt.textContent = nama;
+  namaSelect.appendChild(opt);
 });
+
+namaSelect.addEventListener("change", showDrivePreview);
 
 fotoPreview.addEventListener("load", () => {
   fotoPreviewBox.style.display = "block";
@@ -338,17 +358,18 @@ fotoPreview.addEventListener("load", () => {
 
 fotoPreview.addEventListener("error", () => {
   fotoPreviewBox.style.display = "none";
-  if(fotoUrlInput.value.trim()){
+  if(namaSelect.value){
     setStatus(
       statusSalesEl,
-      "Foto tidak dapat dibuka. Pastikan link adalah file gambar dan akses Drive sudah publik.",
+      "Foto tidak dapat dibuka. Pastikan akses Drive file ini sudah publik.",
       "err"
     );
   }
 });
 
 function showDrivePreview(){
-  const fotoUrl = convertGoogleDriveUrl(fotoUrlInput.value.trim());
+  const linkDrive = SALES_PHOTOS[namaSelect.value];
+  const fotoUrl = convertGoogleDriveUrl(linkDrive);
 
   if(!fotoUrl){
     fotoPreview.removeAttribute("src");
@@ -361,27 +382,22 @@ function showDrivePreview(){
 }
 
 btnSendSales.addEventListener("click", async () => {
-  const nama       = document.getElementById("scNama").value.trim();
+  const nama       = namaSelect.value;
   const pencapaian = document.getElementById("scPencapaian").value.trim();
   const produk     = document.getElementById("scProduk").value.trim();
   const judul      = document.getElementById("scJudul").value.trim();
-  const linkDrive  = fotoUrlInput.value.trim();
 
   if(!nama){
-    setStatus(statusSalesEl, "Isi nama dulu ya.", "err");
+    setStatus(statusSalesEl, "Pilih nama sales dulu ya.", "err");
     return;
   }
 
-  if(!linkDrive){
-    setStatus(statusSalesEl, "Tempel link foto Google Drive dulu ya.", "err");
-    return;
-  }
-
+  const linkDrive = SALES_PHOTOS[nama];
   const fotoUrl = convertGoogleDriveUrl(linkDrive);
   if(!fotoUrl){
     setStatus(
       statusSalesEl,
-      "Link tidak valid. Gunakan link file foto Google Drive, bukan link folder.",
+      "Link foto untuk nama ini tidak valid. Cek daftar SALES_PHOTOS di kode.",
       "err"
     );
     return;
@@ -403,11 +419,10 @@ btnSendSales.addEventListener("click", async () => {
     await submitToForm(body);
 
     setStatus(statusSalesEl, "✅ Terkirim! Kartu akan tampil di dashboard sebentar lagi.", "ok");
-    document.getElementById("scNama").value = "";
+    namaSelect.selectedIndex = 0;
     document.getElementById("scPencapaian").value = "";
     document.getElementById("scProduk").value = "";
     document.getElementById("scJudul").value = "";
-    fotoUrlInput.value = "";
     fotoPreview.removeAttribute("src");
     fotoPreviewBox.style.display = "none";
   } catch(err){
