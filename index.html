@@ -225,8 +225,19 @@
     <label for="scPencapaian">Pencapaian (Rp)</label>
     <input type="number" id="scPencapaian" placeholder="Contoh: 50000000">
 
-    <label for="scProduk">Produk Terjual (unit)</label>
+    <label for="scProduk">Jumlah Polis</label>
     <input type="number" id="scProduk" placeholder="Contoh: 22">
+
+    <label for="scComser">Comser</label>
+    <input type="text" id="scComser" placeholder="Contoh: Nama Comser" maxlength="60">
+
+    <label for="scJenisTransaksi">Jenis Transaksi</label>
+    <select id="scJenisTransaksi">
+      <option value="" disabled selected>-- Pilih jenis transaksi --</option>
+      <option value="Retail">Retail</option>
+      <option value="Online">Online</option>
+      <option value="Project">Project</option>
+    </select>
 
     <label for="scJudul">Judul Kartu (opsional)</label>
     <input type="text" id="scJudul" placeholder="Default: SALES HEBAT" maxlength="30">
@@ -256,7 +267,9 @@ const FORM_CONFIG = {
   entryPencapaian: "entry.1159040072",
   entryProduk:     "entry.357565826",
   entryJudul:      "entry.1748093992",
-  entryFoto:       "entry.1559904346"
+  entryFoto:       "entry.1559904346",
+  entryComser:     "entry.2061557918",
+  entryJenisTransaksi: "entry.298805361"
 };
 
 /* =====================================================================
@@ -382,13 +395,20 @@ function showDrivePreview(){
 }
 
 btnSendSales.addEventListener("click", async () => {
-  const nama       = namaSelect.value;
-  const pencapaian = document.getElementById("scPencapaian").value.trim();
-  const produk     = document.getElementById("scProduk").value.trim();
-  const judul      = document.getElementById("scJudul").value.trim();
+  const nama           = namaSelect.value;
+  const pencapaian     = document.getElementById("scPencapaian").value.trim();
+  const produk         = document.getElementById("scProduk").value.trim();
+  const comser         = document.getElementById("scComser").value.trim();
+  const jenisTransaksi = document.getElementById("scJenisTransaksi").value;
+  const judul          = document.getElementById("scJudul").value.trim();
 
   if(!nama){
     setStatus(statusSalesEl, "Pilih nama sales dulu ya.", "err");
+    return;
+  }
+
+  if(!jenisTransaksi){
+    setStatus(statusSalesEl, "Pilih jenis transaksi dulu ya.", "err");
     return;
   }
 
@@ -413,6 +433,8 @@ btnSendSales.addEventListener("click", async () => {
     body.append(FORM_CONFIG.entryNama, nama);
     body.append(FORM_CONFIG.entryPencapaian, pencapaian);
     body.append(FORM_CONFIG.entryProduk, produk);
+    body.append(FORM_CONFIG.entryComser, comser);
+    body.append(FORM_CONFIG.entryJenisTransaksi, jenisTransaksi);
     body.append(FORM_CONFIG.entryJudul, judul);
     body.append(FORM_CONFIG.entryFoto, fotoUrl);
 
@@ -422,6 +444,8 @@ btnSendSales.addEventListener("click", async () => {
     namaSelect.selectedIndex = 0;
     document.getElementById("scPencapaian").value = "";
     document.getElementById("scProduk").value = "";
+    document.getElementById("scComser").value = "";
+    document.getElementById("scJenisTransaksi").selectedIndex = 0;
     document.getElementById("scJudul").value = "";
     fotoPreview.removeAttribute("src");
     fotoPreviewBox.style.display = "none";
